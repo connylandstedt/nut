@@ -1086,42 +1086,84 @@ static int upsc_commandlist(void)
 		}
 		upsdebugx(2, "Supports command: %s", buf);
 
-		if (strcmp(buf, "UPBS") == 0)
-			can_upbs = 1;
-		else if (strcmp(buf, "UPPM") == 0)
-			can_uppm = 1;
-		else if (strcmp(buf, "UPID") == 0)
-			can_upid = 1;
-		else if (strcmp(buf, "UPDA") == 0)
-			can_upda = 1;
-		else if (strcmp(buf, "UPDT") == 0)
-			can_updt = 1;
-		else if (strcmp(buf, "UPTM") == 0)
-			can_uptm = 1;
-		else if (strcmp(buf, "UPSD") == 0)
-			can_upsd = 1;
-		else if (strcmp(buf, "UPPC") == 0)
-			can_uppc = 1;
-
-		for (cp = commands; cp->cmd; cp++) {
-			if (cp->upsc && strcmp(cp->upsc, buf) == 0) {
-				upsdebugx(1, "instcmd: %s %s", cp->cmd, cp->upsc);
-				dstate_addcmd(cp->cmd);
-				cp->enabled = 1;
-	            break;
-			}
+		// For debugging, output input buffer in hex
+		int buflen = strlen(buf);
+		upsdebugx(4, "Input buffer hex dump:");
+		for (int i = 0; i < buflen; i++) {
+			upsdebugx(4, "char#%d %d", i, buf[i]); /* Convert the character to integer, in this case the character's ASCII equivalent */
 		}
 
-		for (cp = variables; cp->cmd; cp++) {
-			if (cp->upsc && strcmp(cp->upsc, buf) == 0) {
-				upsdebugx(1, "setvar: %s %s", cp->cmd, cp->upsc);
-				cp->enabled = 1;
+		// Tokenize buffer and iterate through input
+		char delim[] = "\n"; // Token delimiter
+		char *ptr = strtok(buf, delim); // Start tokenize input buffer, ptr points to current token
+		while(ptr != NULL)
+		{
+
+			upsdebugx(2, "Processing returned command: %s", ptr);
+
+			if (strncmp(ptr, "UPBS", 4) == 0) {
+				can_upbs = 1;
+				upsdebugx(2, "Matched command %s and set can_upbs", "UPBS");
+			}
+			else if (strncmp(ptr, "UPPM", 4) == 0) {
+				can_uppm = 1;
+				upsdebugx(2, "Matched command %s and set can_uppm", "UPPM");
+			}
+			else if (strncmp(ptr, "UPID", 4) == 0) {
+				can_upid = 1;
+				upsdebugx(2, "Matched command %s and set can_upid", "UPID");
+			}
+			else if (strncmp(ptr, "UPDA", 4) == 0) {
+				can_upda = 1;
+				upsdebugx(2, "Matched command %s and set can_upda", "UPDA");
+			}
+			else if (strncmp(ptr, "UPDT", 4) == 0) {
+				can_updt = 1;
+				upsdebugx(2, "Matched command %s and set can_updt", "UPDT");
+			}
+			else if (strncmp(ptr, "UPTM", 4) == 0) {
+				can_uptm = 1;
+				upsdebugx(2, "Matched command %s and set can_uptm", "UPTM");
+			}
+			else if (strncmp(ptr, "UPSD", 4) == 0) {
+				can_upsd = 1;
+				upsdebugx(2, "Matched command %s and set can_upsd", "UPSD");
+			}
+			else if (strncmp(ptr, "UPPC", 4) == 0) {
+				can_uppc = 1;
+				upsdebugx(2, "Matched command %s and set can_uppc", "UPPC");
+			}
+			else {
+				upsdebugx(2, "No match for command %s", ptr);
+			}
+
+			cp = commands;
+			while (cp->cmd) {
+				if (cp->upsc && strncmp(cp->upsc, ptr, 4) == 0) {
+					upsdebugx(1, "instcmd: %s %s", cp->cmd, cp->upsc);
+					dstate_addcmd(cp->cmd);
+					cp->enabled = 1;
+					break;
+				}
+				cp++;
+			}
+
+			cp = variables;
+			while (cp->cmd) {
+				if (cp->upsc && strncmp(cp->upsc, ptr, 4) == 0) {
+					upsdebugx(1, "setvar: %s %s", cp->cmd, cp->upsc);
+					cp->enabled = 1;
+					break;
+				}
+				cp++;
+			}
+
+			if (strncmp(ptr, "UPCL", 4) == 0) {
+				upsdebugx(2, "Command UPCL matched, should always be last command returned, break processing");
 				break;
 			}
-		}
 
-		if (strcmp(buf, "UPCL") == 0)
-			break;
+			ptr = strtok(NULL, delim); // Search for next token
 	}
 
 	for (cp = variables; cp->cmd; cp++) {
